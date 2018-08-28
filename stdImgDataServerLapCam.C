@@ -120,7 +120,7 @@ int main(int argc, char *argv[]){
 
 
 	//CvCapture  *capture   = cvCaptureFromCAM(-1);  // internal webcam
-	CvCapture  *capture   = cvCaptureFromCAM(1);
+	CvCapture  *capture   = cvCaptureFromCAM(-1);
 	IplImage       *rgb   = cvQueryFrame( capture );
 
 	WINDOW_HEIGHT_ = rgb->height;

@@ -20,7 +20,7 @@ LIBS=$(shell pkg-config --libs opencv)
 
 
 
-TARGETS = stdImgDataServerSim  testClient stdImgDataServerLapCam stdImgDataServerClientColorFilter
+TARGETS = stdImgDataServerSim  testClient stdImgDataServerLapCam stdImgDataServerClientColorFilter stdImgDataServerClientBlobDetector
 
 all:	$(TARGETS)
 
@@ -36,6 +36,9 @@ stdImgDataServerLapCam.o:	stdImgDataServerLapCam.C  StdImgDataServerProtocol.H
 
 stdImgDataServerClientColorFilter.o:	stdImgDataServerClientColorFilter.C  StdImgDataServerProtocol.H
 	$(CC) $(INCL)   -g -DLINUX -D__LINUX__ -DUNIX -D_REENTRANT -c $<
+	
+stdImgDataServerClientBlobDetector.o:	stdImgDataServerClientBlobDetector.C  StdImgDataServerProtocol.H
+	$(CC) $(INCL)   -g -DLINUX -D__LINUX__ -DUNIX -D_REENTRANT -c $<	
 
 testClient.o:	testClient.C  StdImgDataServerProtocol.H
 	$(CC) $(INCL)   -g -DLINUX -D__LINUX__ -DUNIX -D_REENTRANT   -c $<
@@ -54,6 +57,11 @@ stdImgDataServerLapCam: Socket.o stdImgDataServerLapCam.o StdImgDataServerProtoc
 
 stdImgDataServerClientColorFilter: Socket.o stdImgDataServerClientColorFilter.o StdImgDataServerProtocol.H
 	$(CC) stdImgDataServerClientColorFilter.o -o stdImgDataServerClientColorFilter   \
+	$(LIBS) -lpthread -D_REENTRANT \
+	-lm -lstdc++  Socket.o  -lpthread 
+
+stdImgDataServerClientBlobDetector: Socket.o stdImgDataServerClientBlobDetector.o StdImgDataServerProtocol.H
+	$(CC) stdImgDataServerClientBlobDetector.o -o stdImgDataServerClientBlobDetector   \
 	$(LIBS) -lpthread -D_REENTRANT \
 	-lm -lstdc++  Socket.o  -lpthread 
 
