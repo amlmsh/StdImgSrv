@@ -87,6 +87,8 @@ int colorValue_;
 unsigned char *blobCoord_;
 int blobCoordSize_ = 4;
 
+int detectTrash_;
+
 
 // image data raw data received (grey valued)
 IplImage *openCvImageRawGrey_;
@@ -103,8 +105,10 @@ int  sizeRawImageData(TCPSocket *socket, int *s, int *w, int *h, int *color);
 bool updateImageData(TCPSocket *socket,unsigned char *storageImageData, int size);
 
 void createMonitorWin(char* winName,IplImage *openCvImg);
-void updateMonitor(IplImage *openCvImgRawData, IplImage *openCvImgMonitor);
+void updateMonitor(IplImage *openCvImgMonitor,  unsigned char *imgD);
+//void updateMonitor(IplImage *openCvImgRawData, IplImage *openCvImgMonitor);
 void updateRawImageView(IplImage *openCvImageRaw, unsigned char *imgD);
+
 
 /**
  *
@@ -149,8 +153,9 @@ int main(int argc, char *argv[]){
 
 	//view
 	winNameMonitor_ = new char[16]; sprintf(winNameMonitor_,"Blob Detector");
-	openCvImageMinitor_ = cvCreateImage(cvSize(imageWidth_,imageHeight_),IPL_DEPTH_8U,1);
+	openCvImageMinitor_ = cvCreateImage(cvSize(imageWidth_,imageHeight_),IPL_DEPTH_8U,3);
 	createMonitorWin(winNameMonitor_,openCvImageMinitor_);
+	cvCreateTrackbar("thrash value" ,winNameMonitor_, &detectTrash_, 255, NULL );
 
 	openCvImageRawGrey_ = cvCreateImage(cvSize(imageWidth_,imageHeight_),IPL_DEPTH_8U,1);
 
@@ -165,9 +170,9 @@ int main(int argc, char *argv[]){
 
 	int i=0;
 	while(updateImageData(dataSource_,rawImageData_,rawImageDataSize_)){
-		updateRawImageView(openCvImageRawGrey_,rawImageData_);
+		//updateRawImageView(openCvImageRawGrey_,rawImageData_);
 		accessBlocked_ = true;
-		updateMonitor(openCvImageRawGrey_,openCvImageMinitor_);
+		updateMonitor(openCvImageMinitor_,rawImageData_);
 		accessBlocked_ = false;
 		cvShowImage(winNameMonitor_,openCvImageMinitor_);
 		cvWaitKey(2);
@@ -186,21 +191,136 @@ int main(int argc, char *argv[]){
 
 
 void updateRawImageView(IplImage *openCvImageRaw, unsigned char *imgD){
+/*
 	for(int i = 0; i < imageHeight_; i++){
 		for(int j = 0; j < imageWidth_; j++){
 			((uchar *)(openCvImageRaw->imageData + i*openCvImageRaw->widthStep))[j] =
 					imgD[(imageWidth_*i) + j];
 		};
 	};
+*/
+
+
+	for(int i = 0; i < imageHeight_; i++){
+		for(int j = 0; j < imageWidth_; j++){
+				((uchar *)(openCvImageRaw->imageData + i*openCvImageRaw->widthStep))[j*openCvImageRaw->nChannels + 0] =
+						imgD[(imageWidth_*i) + j]; // B
+				((uchar *)(openCvImageRaw->imageData + i*openCvImageRaw->widthStep))[j*openCvImageRaw->nChannels + 1] =
+						imgD[(imageWidth_*i) + j]; // G
+				((uchar *)(openCvImageRaw->imageData + i*openCvImageRaw->widthStep))[j*openCvImageRaw->nChannels + 2] =
+						imgD[(imageWidth_*i) + j]; // R
+		};
+	};
 }
 
-void updateMonitor(IplImage *openCvImgRawData, IplImage *openCvImgMonitor){
+void updateMonitor(IplImage *openCvImgMonitor,  unsigned char *imgD){
+
+	/*
+	// transfer raw data into the monitor image data
 	for(int i = 0; i < imageHeight_; i++){
 		for(int j = 0; j < imageWidth_; j++){
 			((uchar *)(openCvImgMonitor->imageData + i*openCvImgMonitor->widthStep))[j] =
 					((uchar *)(openCvImgRawData->imageData + i*openCvImgRawData->widthStep))[j];
 		};
 	};
+	*/
+
+	// write data into image structure to display image
+	for(int i = 0; i < imageHeight_; i++){
+		for(int j = 0; j < imageWidth_; j++){
+				((uchar *)(openCvImgMonitor->imageData + i*openCvImgMonitor->widthStep))[j*openCvImgMonitor->nChannels + 0] =
+						imgD[(imageWidth_*i) + j]; // B
+				((uchar *)(openCvImgMonitor->imageData + i*openCvImgMonitor->widthStep))[j*openCvImgMonitor->nChannels + 1] =
+						imgD[(imageWidth_*i) + j]; // G
+				((uchar *)(openCvImgMonitor->imageData + i*openCvImgMonitor->widthStep))[j*openCvImgMonitor->nChannels + 2] =
+						imgD[(imageWidth_*i) + j]; // R
+		};
+	};
+
+
+	int value, w, h, maxH, minH, maxW, minW;
+
+	// find maximal height value
+	maxH = -1;
+	for(int i = 0; i < imageHeight_; i++){
+		for(int j = 0; j < imageWidth_; j++){
+			value = imgD[(imageWidth_*i) + j];
+			//value = ((uchar *)(openCvImgMonitor->imageData + i*openCvImgMonitor->widthStep))[j];
+			if(value > detectTrash_){
+				cvCircle(openCvImgMonitor, cvPoint(j,i), 10, Scalar(255,255,255), 2, 8);
+				w = j;
+				h = i;
+				maxH = h;
+				i=imageHeight_;
+				j=imageWidth_;
+			}
+		};
+	};
+
+	// find maximal height value
+	minH = -1;
+	for(int i =imageHeight_-1; i > -1; i--){
+		for(int j = imageWidth_; j > -1 ; j--){
+			value = imgD[(imageWidth_*i) + j];
+			//value = ((uchar *)(openCvImgMonitor->imageData + i*openCvImgMonitor->widthStep))[j];
+			if(value > detectTrash_){
+				cvCircle(openCvImgMonitor, cvPoint(j,i), 10, Scalar(255,255,255), 2, 8);
+				w = j;
+				h = i;
+				minH = h;
+				i=-1;
+				j=-1;
+			}
+		};
+	};
+
+
+	// find maximal width value
+	maxW = -1;
+	for(int i = 0; i < imageWidth_; i++){
+		for(int j = 0; j < imageHeight_; j++){
+			value = imgD[(imageWidth_*j) + i];
+			//value = ((uchar *)(openCvImgMonitor->imageData + i*openCvImgMonitor->widthStep))[j];
+			if(value > detectTrash_){
+				cvCircle(openCvImgMonitor, cvPoint(i,j), 10, Scalar(255,255,255), 2, 8);
+				h = j;
+				w = i;
+				maxW = w;
+				i=imageWidth_;
+				j=imageHeight_;
+			}
+		};
+	};
+
+	// find maximal width value
+	minW = -1;
+	for(int i = imageWidth_; i > -1 ; i--){
+		for(int j = imageHeight_; j > -1 ; j--){
+			value = imgD[(imageWidth_*j) + i];
+			//value = ((uchar *)(openCvImgMonitor->imageData + i*openCvImgMonitor->widthStep))[j];
+			if(value > detectTrash_){
+				cvCircle(openCvImgMonitor, cvPoint(i,j), 10, Scalar(255,255,255), 2, 8);
+				h = j;
+				w = i;
+				minW = w;
+				i=-1;
+				j=-1;
+			}
+		};
+	};
+
+
+
+	cvLine(openCvImgMonitor, cvPoint(0,maxH),cvPoint(imageWidth_,maxH), Scalar(255,0,0), 2, 8);
+	cvLine(openCvImgMonitor, cvPoint(0,minH),cvPoint(imageWidth_,minH), Scalar(0,0,255), 2, 8);
+
+	cvLine(openCvImgMonitor, cvPoint(maxW,0),cvPoint(maxW, imageHeight_), Scalar(255,0,0), 2, 8);
+	cvLine(openCvImgMonitor, cvPoint(minW,0),cvPoint(minW, imageHeight_), Scalar(0,0,255), 2, 8);
+
+
+	// find minimal height value
+
+
 };
 
 void createMonitorWin(char* winName,IplImage *openCvImg){
