@@ -238,7 +238,7 @@ void updateMonitor(IplImage *openCvImgMonitor,  unsigned char *imgD){
 	};
 
 
-	int value, w, h, maxH, minH, maxW, minW;
+	int value, w, h, maxH, minH, maxW, minW, meanW, meanH;
 
 	// find maximal height value
 	maxH = -1;
@@ -316,6 +316,59 @@ void updateMonitor(IplImage *openCvImgMonitor,  unsigned char *imgD){
 
 	cvLine(openCvImgMonitor, cvPoint(maxW,0),cvPoint(maxW, imageHeight_), Scalar(255,0,0), 2, 8);
 	cvLine(openCvImgMonitor, cvPoint(minW,0),cvPoint(minW, imageHeight_), Scalar(0,0,255), 2, 8);
+
+
+	if( ((maxW < 0) && (minW < 0)) ||
+		((maxH < 0) && (minH < 0))	){
+		blobCoord_[0] = 0;
+		blobCoord_[1] = 0;
+		blobCoord_[2] = 0;
+		blobCoord_[3] = 0;
+	}else{
+		if(maxW < minW){
+			int tmp;
+			tmp = maxW;
+			maxW = minW;
+			minW = tmp;
+		}
+		if(maxH < minH){
+			int tmp;
+			tmp = maxH;
+			maxH = minH;
+			minH = tmp;
+		}
+
+		meanW = ((maxW - minW) / 2) + minW;
+		meanH = ((maxH - minH) / 2) + minH;
+
+
+		blobCoord_[0] = ((int)0xFF)   & meanW;  // 1st 8 bits of meanW
+		blobCoord_[1] = (((int)0xFF00) & meanW) >> 8 ;  // 2nd 8 bits of meanW
+		blobCoord_[2] = ((int)0xFF)   & meanH;  // 1st 8 bits of meanH
+		blobCoord_[3] = (((int)0xFF00) & meanH) >> 8;  // 2nd 8 bits of meanH
+
+		cout << "width: " << meanW  << "    height: " << meanH << endl;
+
+		int bloobCoordWidth = 0;
+		int bloobCoordHight = 0;
+
+		bloobCoordWidth = (int) (blobCoord_[1]);
+		bloobCoordWidth = bloobCoordWidth << 8;
+		bloobCoordWidth = bloobCoordWidth   | ((int) blobCoord_[0]);
+
+		bloobCoordHight = (int) (blobCoord_[3]);
+		bloobCoordHight = bloobCoordHight << 8;
+		bloobCoordHight = bloobCoordHight   | ((int) blobCoord_[2]);
+
+		//printf("HEX: %08x \t-->\t %08x - %08x\n", meanW, blobCoord_[0], blobCoord_[1]);
+
+
+		//cout << "CALC: width: " << bloobCoordWidth  << "    height: " << bloobCoordHight << endl;
+
+	}
+
+
+
 
 
 	// find minimal height value
@@ -423,7 +476,7 @@ void HandleTCPClient(TCPSocket *sock){
 				sock->send(blobCoord_,blobCoordSize_);
 				break;
 			}else{
-				cout << "access blocked continue request.\n";
+				//cout << "access blocked continue request.\n";
 			};
 		}while(true);
     }else if(!(strncmp(GET_VERSION,revBuffer,strlen(GET_VERSION)))){
