@@ -127,7 +127,7 @@ int main(int argc, char *argv[]){
 
 
 
-	// interprete received data
+	// interpret received data
 	int nmbTokens = sscanf(echoBufferMetaData,"[W=%d,H=%d,O=%c,C=%d,X=%c%c%c,B=%d,BTS=%d]",
 			&imageWidth_,&imageHeight_,&imageOrg_,&color_,&ch1_,&ch2_,&ch3_,&recvImageDataSize_,&nmbBytesTimeStamp_);
 	if(nmbTokens != 9){
