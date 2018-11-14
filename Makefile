@@ -20,7 +20,8 @@ LIBS=$(shell pkg-config --libs opencv)
 
 
 
-TARGETS = stdImgDataServerSim  testClient stdImgDataServerLapCam stdImgDataServerClientColorFilter stdImgDataServerClientBlobDetector
+TARGETS = stdImgDataServerSim  testClient stdImgDataServerLapCam stdImgDataServerClientColorFilter stdImgDataServerClientBlobDetector testClientBlobDetector testOppBlobDetector
+
 
 all:	$(TARGETS)
 
@@ -40,7 +41,16 @@ stdImgDataServerClientColorFilter.o:	stdImgDataServerClientColorFilter.C  StdImg
 stdImgDataServerClientBlobDetector.o:	stdImgDataServerClientBlobDetector.C  StdImgDataServerProtocol.H
 	$(CC) $(INCL)   -g -DLINUX -D__LINUX__ -DUNIX -D_REENTRANT -c $<	
 
+BlobDetector.o:	BlobDetector.C  BlobDetector.H StdImgDataServerProtocol.H
+	$(CC) $(INCL)   -g -DLINUX -D__LINUX__ -DUNIX -D_REENTRANT -c $<	
+
 testClient.o:	testClient.C  StdImgDataServerProtocol.H
+	$(CC) $(INCL)   -g -DLINUX -D__LINUX__ -DUNIX -D_REENTRANT   -c $<
+
+testClientBlobDetector.o:	testClientBlobDetector.C  StdImgDataServerProtocol.H
+	$(CC) $(INCL)   -g -DLINUX -D__LINUX__ -DUNIX -D_REENTRANT   -c $<
+	
+testOppBlobDetector.o:	testOppBlobDetector.C BlobDetector.C BlobDetector.H
 	$(CC) $(INCL)   -g -DLINUX -D__LINUX__ -DUNIX -D_REENTRANT   -c $<
 
 stdImgDataServerSim: Socket.o stdImgDataServerSim.o StdImgDataServerProtocol.H
@@ -68,6 +78,11 @@ stdImgDataServerClientBlobDetector: Socket.o stdImgDataServerClientBlobDetector.
 testClient: testClient.o Socket.o testClient.C StdImgDataServerProtocol.H
 	$(CC)  testClient.o Socket.o -o testClient $(LIBS) -ldl -lstdc++ -lm -std=c++11 \
 	
+testClientBlobDetector:	testClientBlobDetector.o Socket.o testClientBlobDetector.C StdImgDataServerProtocol.H
+	$(CC)  testClientBlobDetector.o Socket.o -o testClientBlobDetector $(LIBS) -ldl -lstdc++ -lm -std=c++11 \
+
+testOppBlobDetector:	testOppBlobDetector.o Socket.o BlobDetector.o StdImgDataServerProtocol.H
+	$(CC)  testOppBlobDetector.o Socket.o BlobDetector.o  -o testOppBlobDetector $(LIBS) -ldl -lstdc++ -lm -std=c++11 \
 
 
 
